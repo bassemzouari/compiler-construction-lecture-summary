@@ -1,0 +1,49 @@
+ \documentclass[
+    ngerman,
+    color=1b,
+    % dark_mode, 
+    loadcommon, % Loads a list of commonly used Packages
+    summary,
+    boxarc,
+    main,
+    % manual_term,
+    % solution=true,
+]{rubos-tuda-template}
+
+
+\title[EICB]{Einführung in den Compilerbau}
+\subtitle{Zusammenfassung}
+\semester{Wise 2023/2024}
+\fachbereich{Informatik}
+\author{Bassem Zouari}
+\date{\today}
+\version{1.0}
+\termOrder{printAuthor,printSemester,%
+printVersion,,,printDate,printFachbereich}
+
+\ConfigureHeadline{
+	headline={summary-centered}
+}
+
+\begin{document}
+
+%--Titelseite--
+\maketitle{}
+\tableofcontents %Inhaltsverzeichnis
+\clearpage
+%---Beginn Der Zusammenfassung---%
+
+%Kapitel Laden
+% Dieser Ansatz lässt keine preview von LaTeX-Workshop zu
+%\foreach \kapitelnr in {1,...,8}{
+%    \input{Kapitel/Kapitel_\kapitelnr/Kapitel_\kapitelnr}
+%}
+%Dieser schon
+%\input{Kapitel/Kapitel_1/Kapitel_1}
+\input{Einleitung}
+\clearpage
+\input{Syntaktische Analyse}
+\clearpage
+\input{Laufzeitorganisation}
+
+\end{document}

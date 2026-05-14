@@ -1,0 +1,155 @@
+\section{Laufzeitorganisation}
+\subsection{Einleitung}
+Die \fatsf{Laufzeitorganisation} ist ein zentraler Aspekt des Compilerbaus und beschreibt, wie abstrakte Konzepte einer Hochsprache auf einer Zielmaschine umgesetzt werden. Sie bildet eine Brücke zwischen der Quellsprache und der zugrunde liegenden Hardware, indem sie sicherstellt, dass Programme korrekt ausgeführt werden können
+\subsubsection{Wesentliche Aufgaben der Laufzeitorganisation}
+\begin{enumerate}
+    \item \fatsf{Darstellung von Daten und Werten}\\
+    Jeder Datentyp der Quellsprache (z.B. Ganzzahlen, Fließkommazahlen, Strings) muss auf der Zielmaschine repräsentiert werden. Dies umfasst:
+    \begin{itemize}
+        \item Die Auswahl geeigneter Speicherformate (z.B. Big-Endian vs. Little-Endian, feste oder variable Längen).
+        \item Die Kodierung von Sonderfällen (z.B. Nullzeiger, NaN-Werte).
+    \end{itemize}
+    \item \fatsf{Auswertung von Ausdrücken und Handhabung von Zwischenergbnissen}
+    \begin{itemize}
+        \item Mechanismen zur temporären Speicherung von Werten in Registern oder im Speicher.
+        \item Behandlung von Operatoren und Operatorpräzedenz.
+    \end{itemize}
+    \item \fatsf{Speicherverwaltung}
+    \begin{itemize}
+        \item \fatsf{Globaler Speicher:} Für globale Variablen und Konstanten.
+        \item \fatsf{Lokaler Speicher:} Für Variablen, die innerhalb von Funktionen oder Prozeduren verwendet werden.
+        \item \fatsf{Heap:} Dynamisch allokierter Speicher (z.B. für Objekte oder Datenstrukturen).
+        \item Unterstützung für Speicherbereinigung (z.B. Garbage Collection).
+    \end{itemize}
+    \item \fatsf{Routinen zur Prozedur- und Funktionsimplementieruntg}
+    \begin{itemize}
+        \item Verwaltung von \fatsf{Funktionsaufrufen:} Übergabe von Parametern und Rückgabewerten
+        \item Aufbau und Verwaltung von \fatsf{Call Stacks:}
+        \begin{itemize}
+            \item Speicherung von Rücksprungadressen, lokalen Variablen und temporären Werten
+        \end{itemize}
+        \item Unterstützung für Rekursion
+    \end{itemize}
+    \item \fatsf{Erweiterung für objektorientierten Sprachen}
+    \begin{itemize}
+        \item Verwaltung von \fatsf{Objekten und Methoden:}
+        \begin{itemize}
+            \item Speicherung von Objekten auf dem Heap
+            \item Implementierung von \fatsf{Methodentabellen} (z.B. für dymanisches Binden von Methoden)
+        \end{itemize}
+        \item Unterstützung für \fatsf{Vererbung} und \fatsf{Polymorphismus}
+    \end{itemize}
+\end{enumerate}
+\subsubsection{Zielmaschinensupport}
+Die Zielmaschine (Hardware oder virtuelle Maschine) muss Mecahnismen bereitstellen, um diese Aufgabe effizient umzusetzen:
+\begin{itemize}
+    \item \fatsf{Register:} Temporäre Speicherung und Berechnungen
+    \item \fatsf{Speicher:} Speicherung von Datenstrukturen und Programmzuständen
+    \item \fatsf{Maschineninstruktionen:} Unterstützung für Arithmetik, logische Operationen, Speicherzugriffe und Kontrollfluss
+    \item \fatsf{Stack:} Verwaltung von Funktionsaufrufen und -rückgaben sowie lokaler Variablen
+\end{itemize}
+\subsubsection{Herausforderung des \enquote{Semantic Gap}}
+Der \fatsf{semantische Spalt} beschreibt die Lücke zwischen den Konzepten der Hochsprache und den Fähigkeiten der Zielmaschine. Die Laufzeitorganisation versucht, diese Lücke zu schließen, indem sie komplexe Sprachmerkmale wie Arrays, Objekte und Prozeduren in die Grundoperationen der Zielmaschine übersetzt.
+\subsection{Triangle Abstract Machine}
+Die \fatsf{Triangle Abstract Machine (TAM)} ist eine abstrakte Maschine, die entworfen wurde, um Programme aus der Triangle-Programmiersprache auszuführen. Sie ist ein essentielles Werkzeug zur Vermittlung von Konzepten im Compilerbau, da sie eine klare Trennung zwischen Maschinenressourcen und deren Verwendung demonstriert.
+\subsubsection{Speicherorganisation der TAM}
+Die TAM folgt einer \fatsf{Harvard-Architektur} mit zwei getrennten Speicherbereichen:
+\begin{enumerate}
+    \item \fatsf{Instruktionsspeicher} (32-Bit-Worte): Speichert Programme und enthält Instruktionen.
+    \item \fatsf{Datenspeicher} (16-Bit-Worte): Speichert Daten, wie Variablen, den Stack, den Heap und andere temporäre Werte.
+\end{enumerate}
+\fatsf{Adressierung des Instruktionsspeichers}
+\begin{itemize}
+    \item \fatsf{Code Base (CB):} Zeiger auf den Anfang des Programmcodes (konstant)
+    \item \fatsf{Code Top (CT):} Zeiger auf das Ende des Programmcodes (konstant)
+    \item \fatsf{Code Pointer (CP):} Zeiger auf die nächste auszuführende Instruktion (variabel)
+\end{itemize}
+\fatsf{Adressierung des Datenspeichers}
+\begin{itemize}
+    \item \fatsf{Stack Base (SB):} Anfang des Stacks (konstant)
+    \item \fatsf{Stack Top (ST):} Zeiger auf die Spitze des Stacks (variabel)
+    \item \fatsf{Heap Base (HB):} Anfang des Heaps (konstant)
+    \item \fatsf{Heap Top (HT):} Zeiger auf das Ende des Heaps (variabel)
+    \item \fatsf{Heap Free (HP):} Zeiger auf den nächsten verfügbaren Speicherplatz im Heap (variabel)
+\end{itemize}
+Die Speicherbereiche sind klar getrennt, wobei \fatsf{der Stack von unten nach oben wächst} und \fatsf{der Heap von oben nach unten.} Nicht genutzter Speicher liegt zwischen diesen Bereichen.
+\subsubsection{TAM Speicherstruktur}
+Die Speicherbereiche sind logisch wie folgt organisiert:
+\begin{enumerate}
+    \item \fatsf{Code Store:} Beinhaltet Instuktionen und eventuell Intrinsics (primitive Operationen)
+    \item \fatsf{Data Store:} Beinhaltet globale Variablen, Stack-Frames und den Heap
+\end{enumerate}
+\begin{defBox}
+    Memory Layout:\\
+    CB ... CT: Code Store\\
+    SB ... ST: Stack Segment (wächst nach oben)\\
+    HT ... HB: Heap Segment (wächst nach unten)
+\end{defBox}
+\subsection{Auswertung von Ausdrücken}
+Die \fatsf{Auswertung von Ausdrücken} in Compilerbau und Maschinenarchitektur zeigt, wie Hochsprachenoperationen auf Maschinenebene verarbeitet werden. Der Ansatz unterscheidet sich erheblich zwischen \fatsf{Stack-Maschinen} und \fatsf{Register-Maschinen}
+\subsubsection{Stack-Maschine}
+Eine Stack-Maschine verwendet einen \fatsf{Stack}, um Operanden und Zwischenergebnisse zu verwalten. Dies ermöglicht eine einfache und klare Abarbeitung von Ausdrücken.\\
+\fatsf{Beispiel: Auswertung von d := a * a + 2 * a * b - 4 * a * c}
+\begin{defBox}
+    LOAD  a       ; Push a\\
+    LOAD  a       ; Push a\\
+    MUL           ; a * a\\
+    LOADL 2       ; Push 2\\
+    LOAD  a       ; Push a\\
+    MUL           ; 2 * a\\
+    LOAD  b       ; Push b\\
+    MUL           ; 2 * a * b\\
+    ADD           ; a * a + 2 * a * b\\
+    LOADL 4       ; Push 4\\
+    LOAD  a       ; Push a\\
+    MUL           ; 4 * a\\
+    LOAD  c       ; Push c\\
+    MUL           ; 4 * a * c\\
+    SUB           ; (a * a + 2 * a * b) - (4 * a * c)\\
+    STORE d       ; Store result in d
+\end{defBox}
+\fatsf{Ablauf (Stack-Zustand):}
+\begin{enumerate}
+    \item LOAD a -> Stack: [a]
+    \item LOAD a -> Stack: [a, a]
+    \item MUL -> Stack: [a * a]
+    \item LOADL 2 -> Stack: [a * a, 2]
+    \item LOAD a -> Stack: [a * a, 2, a]
+    \item MUL -> Stack: [a * a, 2 * a]
+    \item LOAD b -> Stack: [a * a, 2 * a, b]
+    \item MUL -> Stack: [a * a, 2 * a * b]
+    \item ...
+\end{enumerate}
+\subsubsection{Register-Maschine}
+Eine Register-Maschine verwendet \fatsf{Register} zur Speicherung von Operanden und Zwischenergebnissen. Dies erfordert eine präzise Verwaltung der begrenzten Anzahl von Registern\\
+\fatsf{Typische Eigenschaften}
+\begin{itemize}
+    \item Operanden und Zwischenergebnisse werden in Registern gehalten
+    \item Instruktionen spezifizieren die Register direkt
+    \item Zwischenergebnisse müssen ggf. in den Speicher ausgelagert werden, wenn die Registeranzahl nicht ausreicht
+\end{itemize}
+\fatsf{Vorteile}
+\begin{itemize}
+    \item Effizientere Nutzung der Hardware, da Registerzugriffe schneller sind als Speicherzugriffe
+    \item Weniger Speicherzugriffe als bei einer Stack-Maschine
+\end{itemize}
+\fatsf{Herausforderungen}
+\begin{itemize}
+    \item Register-Allokation: Compiler muss Zwischenergebnisse auf Register verteilen
+    \item Bei zu komplexen Ausrücken müssen Register-Inhalte in den Speicher ausgelagert werden
+\end{itemize}
+\fatsf{Beispiel: Auswertung von d := a * a + 2 * a * b - 4 * a * c}\\
+\fatsf{Register-Maschinen-Code:}
+\begin{defBox}
+    LOAD  R1 a    ; R1 = a\\
+    MULT  R1 a    ; R1 = a * a\\
+    LOAD  R2 2    ; R2 = 2\\
+    MULT  R2 a    ; R2 = 2 * a\\
+    MULT  R2 b    ; R2 = 2 * a * b\\
+    ADD   R1 R2   ; R1 = a * a + 2 * a * b\\
+    LOAD  R2 4    ; R2 = 4\\
+    MULT  R2 a    ; R2 = 4 * a\\
+    MULT  R2 c    ; R2 = 4 * a * c\\
+    SUB   R1 R2   ; R1 = a * a + 2 * a * b - 4 * a * c\\
+    STORE R1 d    ; d = R1\\
+\end{defBox}

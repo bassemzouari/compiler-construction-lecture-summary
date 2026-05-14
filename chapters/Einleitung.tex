@@ -1,0 +1,703 @@
+\section{Einleitung}
+\subsubsection*{Compiler}
+Schnittstelle zwischen
+\begin{itemize}
+    \item Programmiersprache
+    \item Maschine
+\end{itemize}
+\blue{Programmiersprache} Gut für Menschen handhabbar
+\begin{itemize}
+    \item Smaltalk
+    \item Java
+    \item C++
+\end{itemize}
+\blue{Maschine} Getrimmt auf
+\begin{itemize}
+    \item Ausführungsgeschwindigkeit
+    \item Preis/Chip-Fläche
+    \item Energieverbrauch
+    \item Nur selten: Leichte Programmierbarkeit
+\end{itemize}
+
+\subsubsection*{Auswirkung von Compilern}
+Entscheidet über dem Benutzer \blue{zugängliche} Rechenleistung
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Bildkompression auf Dothan CPU.jpeg}
+\end{figure}
+
+\subsubsection*{Unterschiedliche Abstraktionsebenen}
+\begin{itemize}
+    \item Auf unteren Ebenen immer feinere Beschreibung
+    \item Immer näher an Zielmaschine (Hardware)
+    \item Details werden von Compiler hinzugefügt
+    \begin{itemize}
+        \item Durch verschiedenste Algorithmen
+        \begin{itemize}
+            \item Analyse von Programmeigenschaften
+            \begin{infoBox}
+                Der Compiler Untersucht den Code, um bestimmte Eigenschaften zu erkennen, z.B. welche Variablen oft verwendet werden oder welche Schleifen optimiert werden können.
+            \end{infoBox}
+            \item Verfeinerung der Beschreibung durch Synthese von Details
+            \begin{infoBox}
+                Der Compiler fügt Details hinzu, die in der höheren Ebene nicht direkt angegeben wurden. z.B. kann er den Speicherbedarf optimieren oder bestimmte Maschinenbefehle einfügen.
+            \end{infoBox}
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+\begin{infoBox}
+    Zusammengefasst bedeutet das: Je näher man sich an der Hardware befindet, desto detaillierter wird der Code. Ein Compiler hilft dabei, die Lücke zwischen der abstrakten Programmierlogik und den maschinennahen Datails zu schließen.
+\end{infoBox}
+\subsection{Auswirkung der Zielmaschine}
+\subsubsection*{Einfach: Hennessy \& Patterson DLX}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{Einfach: Hennessy und Patterson DLX.jpeg}
+\end{figure}
+\clearpage
+\subsubsection*{Komplizierter: Analog Devices TigerSHARC}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{Komplizierter: Analog Devices TigerSHARC.jpeg}
+\end{figure}
+\clearpage
+\subsubsection*{Problematisch: IBM/Sony Cell Processor}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{IBM Sony Cell Processor.jpeg}
+\end{figure}
+\subsubsection*{Spezialisierte Anforderungen an CPUs}
+Je nach Anwendungsgebiet mehr oder weniger wichtig ...\\
+Rechenleistung (hoch/niedrig)
+\begin{itemize}
+	\item Datentypen (Gleitkomma, ganzzahlig, Verktoren)
+	\item Operationen (Multiplikationen, MACs)
+	\item Speicherbandbreiten (parallele Speicherzugriffe)
+	\item Energieeffizienz
+	\item Platzbedarf (für den Prozessorchip)
+\end{itemize}
+... können häufig nur durch spezialisierte Prozessoren erfüllt werden
+$\rightarrow$ \fatsf{benötigen passende Compiler}
+
+\subsubsection*{Technologie}
+\begin{itemize}
+	\item Taktfrequenz von Prozessoren nur mit Mühe steigerbar
+	\item Trend weg von hochgetakteten Einzelprozessoren
+	\item ... hin zu vielen (aber langsameren) Prozessoren
+	\item Wie parallele Strukturen programmieren?
+	\item Erste praktische Ansätze
+	\begin{itemize}
+		\item OpenMP: Mehr-Kern-CPUs
+		\item NVidia CUDA: GPUs
+		\item OpenCL: Heterogene Systeme (GPUs + CPUs, experimentell auch schon FPGAs)
+	\end{itemize}
+	\item Aber noch wenig abstrakt 
+	\item Keine automatische Parallelisierung!
+\end{itemize}
+Extrem wichtiges Anwendungsgebiet: Ausführung von Machine Learning-Berechnungen (z.B. TensorFlow XLA, Glow, etc.)
+\begin{infoBox}
+    Der Trend zu vielen langsameren Prozessoren ist ein Ansatz, um die Rechenleistung zu steigern, ohne dabei die Taktfrequenz zu erhöhen. Um das Potenzial solcher parallelen Architekturen zu nutzen, gibt es spezialisierte Programmiertechniken und Tools, wie OpenMP, CUDA und OpenCL. Für die Zukunft sind bessere, abstraktere Modelle nötig, die Entwicklern die Parallelisierung erleichtern und vielleicht irgendwann eine automatische Parallelisierung ermöglichen.
+\end{infoBox}
+\subsubsection*{Motivation: Compilerbau in der Lehre}
+Kombination von verschiedenen Feldern der Informatik
+\begin{itemize}
+	\item Theoretische Informatik (Parsing)
+	\item Technische Informatik (Architektur der Zielmaschine)
+	\item Praktische Informatik (Software-Engineering beim Aufbau des Compilers)
+\end{itemize}
+\fatsf{$\rightarrow$ Programmieraufgaben betreffen alle Felder!}
+
+\subsection{Aufbau von Compilern}
+\subsubsection*{Vorgehen: Bearbeitung in mehreren Phasen}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Bearbeitung in mehreren Phasen.jpeg}
+    \caption{Zwischendarstellung(en) für den Informationsaustausch}
+\end{figure}
+
+\subsubsection*{Syntaxanalyse}
+\begin{itemize}
+	\item Überprüfung ob Programm Syntaxregeln gehorcht
+	\item Speichern des Programmes in geeigneter Darstellung
+	\begin{figure}[h]
+        \centering
+        \includegraphics[width=1\textwidth]{Syntaxanalyse.jpeg}
+    \end{figure}
+\end{itemize}
+\subsubsection*{Kontextanalyse - Identifikation}
+\begin{itemize}
+	\item Ordne Variablen ihren Deklarationen zu
+	\item Berechne Typen von Ausdrücken
+\end{itemize}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{Kontextanalyse.jpeg}
+\end{figure}
+
+\subsubsection*{Kontextanalyse - Überprüfung}
+Erkenne Fehler in Variablen- und Typzuordnung
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{Kontextanalyse-Überprüfung.jpeg}
+\end{figure}
+
+\subsubsection*{Code-Erzeugung 1}
+\begin{itemize}
+	\item Programm ist syntaktisch und kontextuell korrekt
+	\item Übersetzung in Zielsprache
+	\begin{itemize}
+		\item Maschinensprache
+		\item Assembler
+		\item C
+		\item Andere Hochsprache
+	\end{itemize}
+	\item Ordne DAST-Teilen Instruktionen der Zielsprache zu
+	\item Handhabung von Variablen
+	\begin{enumerate}
+		\item Deklaration: Reserviere Speicherplatz für eine Variable
+		\item Verwendung: Referenziere immer den zugeordneten Speicherplatz
+	\end{enumerate}
+\end{itemize}
+
+\clearpage
+\subsubsection*{Code-Erzeugung 2}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{Code-Erzeugung.jpeg}
+\end{figure}
+
+\subsection{Optimierung}
+\subsubsection*{Optimierender Compiler}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{Optimierender Compiler.jpeg}
+\end{figure}
+\begin{itemize}
+	\item Front-End: Syntaktische/kontextuelle Analyse
+	\item Back-End: Code-Erzeugung
+	\item \blue{Middle-End:} Transformation von Zwischendarstellungen
+	\begin{itemize}
+	\item Intermediate Representation (IR)
+	\item Keine direkte Code-Erzeugung aus Front-End IR
+	\item Verwendet in der Regel zusätzliche interne Darstellungen
+	\end{itemize}
+\end{itemize}
+\fatsf{Ziel:} Verbesserung des erzeugten Codes in Bezug auf bestimmte Gütemaße 
+
+\subsubsection*{Beispiele für Optimierungen}
+Constant-Folding\\
+\begin{minipage}{0.5\textwidth}
+	\begin{codeBlock}{}
+		x = (2+3) * y
+	\end{codeBlock}
+\end{minipage}
+\begin{minipage}{0.5\textwidth}
+	\begin{codeBlock}{}
+		x = 5*y
+	\end{codeBlock}
+\end{minipage}
+
+Common-Subexpression Elimination\\
+\begin{minipage}{0.5\textwidth}
+	\begin{codeBlock}{}
+		x = 5 * a + b;
+		y = 5 * a + c;
+	\end{codeBlock}
+\end{minipage}
+\begin{minipage}{0.5\textwidth}
+    \begin{codeBlock}{}
+    	t = 5 * a;
+    	x = t + b;
+    	y = t + c;
+    \end{codeBlock}
+\end{minipage}
+Strength Reduction\\
+\begin{minipage}{0.5\textwidth}
+    \begin{codeBlock}{}
+    	for (i=0; i <= j; ++i){
+    		a[i*3] = 42;
+    	}
+    \end{codeBlock}
+\end{minipage}
+\begin{minipage}{0.5\textwidth}
+    \begin{codeBlock}{}
+    	int t = 0;
+    	for (i=0; i <= j; ++i){
+    		a[t] = 42;
+    		t = t + 3;
+    	}
+    \end{codeBlock}
+\end{minipage}
+Loop-invariant Code Motion\\
+\begin{minipage}{0.5\textwidth}
+    \begin{codeBlock}{}
+    	int t;
+    	for (i=0; i <= j; ++i){
+    		t = x * y;
+    		a[i] = t * i;	
+    	}
+    \end{codeBlock}
+\end{minipage}
+\begin{minipage}{0.5\textwidth}
+	\begin{codeBlock}{}
+		int t = x * y;
+		for (i=0; i <= j; ++i){
+			a[i] = t * i
+		}
+	\end{codeBlock}
+\end{minipage}
+\subsection{Organisatorisches}
+\subsubsection*{Material Grundlage der Vorlesung}
+Grundlagen von Compilern: \blue{Fast vollständig}
+\fatsf{Programming Language Processors in Java} von David Watt und Deryck Brown, Prentice-Hall 2000
+Auszugsweise noch weiteres Material, z.B. zum ANTLR Parsergenerator
+\subsubsection*{Aufbau der Veranstaltung}
+Überblick über Front-End (ca. 3 Wochen)
+\begin{itemize}
+	\item Lexing/Parsing
+	\item Zwischendarstellungen
+\end{itemize}
+Überblick über Middle-End (ca. 2 Wochen)
+\begin{itemize}
+	\item Semantische / Kontextanalyse
+\end{itemize}
+Überblick über Back-End (ca. 4 Wochen)
+\begin{itemize}
+	\item Laufzeitorganisation
+	\item Code-Erzeugung
+\end{itemize}
+Weiterführende Themen
+\begin{itemize}
+	\item Verwendung von Front-End-Generatoren (ca. 2-3 Wochen)
+	\item Java Virtuelle Maschine (ca. 1-2 Wochen)
+\end{itemize}
+\subsection{Syntax}
+\subsubsection*{Syntax oder Grammatik (PLPJ, Kapitel 1)}
+\begin{grayInfoBox}
+	Beschreibt die Satzstruktur von korrekten Programmen
+	\begin{itemize}
+		\item n := n + 1;\\
+		Syntaktisch korrektes Statement in Triangle
+		\item \enquote{Ein Kreis hat zwei Ecken.}\\
+		\blue{Syntaktisch} korrekte Aussage in Deutsch
+	\end{itemize}
+\end{grayInfoBox}
+
+\subsubsection*{Kontextuelle Einschränkungen}
+\begin{grayInfoBox}
+	Dazu gehören Regeln für den Geltungsbereich (scope) und den Typ von Aussagen. 
+	\begin{itemize}
+		\item n muss bei Auftreten des Statements passend deklariert sein.
+		\item Kreise haben im allgemeinen keine Ecken.\\
+		Hier passen die Typen offenbar nicht.
+	\end{itemize}
+\end{grayInfoBox}
+
+\subsubsection*{Semantik}
+\begin{grayInfoBox}
+	Die Bedeutung einer Anweisung/Aussage in einer Sprache. Wird bei Programmiersprachen häufig beschrieben ...
+	\blue{Operationell} Welche Schritte laufen ab, wenn das Programm gestartet wird?
+	\blue{Denotational} Abbildung von Eingaben auf Ausgaben
+\end{grayInfoBox}
+
+\subsubsection*{Art der Spezifikation}
+\begin{itemize}
+	\item Für alle drei Teile
+	\begin{enumerate}
+		\item Sytax
+		\item Kontextuelle Einschränkungen
+		\item Semantik
+	\end{enumerate}
+	\item ...gibt es jeweils zwei Spezifikationsarten
+	\begin{itemize}
+		\item Formal
+		\item Informal
+	\end{itemize}
+\end{itemize}
+\begin{defBox}[title=Triangle-Spezifikaiton]
+    \begin{itemize}
+    	\item Formale Syntax (reguläre Ausdrücke, EBNF)
+    	\item Informale kontextuelle Einschränkungen
+    	\item Informale Semantik
+    \end{itemize}
+\end{defBox}
+
+\subsubsection*{Syntax}
+Eine \fatsf{Sprache} ist eine Menge von \fatsf{Zeichenketten} aus einem \fatsf{Alphabet}
+\begin{itemize}
+	\item Wie diese Menge angeben?
+	\item Bei endlichen Sprachen: Einfach Elemente aufzählen
+	\item Geht nicht bei unendlichen Sprachen
+	\item Einige mögliche Vorgehensweisen
+	\begin{enumerate}
+		\item Mathematische Mengennotation
+		\item Reguläre Ausdrücke
+		\item Kontextfreie Grammatik
+	\end{enumerate}
+\end{itemize}
+
+\subsubsection*{Syntax durch Mengenbeschreibung}
+\fatsf{Beispiele für die beschriebenen Zeichenketten}
+\begin{itemize}
+	\item L = \{a,b,c\} beschreibt a, b, c
+	\item L = \{$x^{n} | n>0$\} beschreibt x, xx, xxx, ...
+	\item L = \{$x^{n}y^{m}|n>0,m>0$\} beschreibt xxy, xyy, xxxyy, ...
+	\item L = \{$x^{n}y^{n}|n>0$\} beschreibt xy, xxyy, ..., aber z.B. nicht xxy
+\end{itemize}
+Offensichtlich keine sonderliche nützliche und gut zu handhabende Spezifikationsform für komplexere Sprachen
+
+\subsubsection*{Reguläre Ausdrücke (REs)}
+Erweitere Zeichenketten aus dem Alphabet um Operatoren
+\begin{itemize}
+	\item \blue{|} zeigt Alternativen an
+	\item \blue{*} zeigt Null oder mehr Vorkommen des vorangehenden Zeichens an
+	\item \blue{$\epsilon$} ist die leere Zeichenkette
+	\item \blue{(...)} erlauben die Gruppierung von Teilausdrücken durch Klammerung
+\end{itemize}
+Beispiele
+\begin{itemize}
+	\item L = a|b|c ergibt a, b, c
+	\item L = ab* ergibt a, ab, abb, ...
+	\item L = (ab)* ergibt die leere Zeichenkette $\epsilon$, ab, abab, ababab, ...
+	\item L = a(b|$\epsilon$) ergibt a oder ab
+\end{itemize}
+
+\subsubsection*{Mächtigkeit von REs?}
+\begin{grayInfoBox}
+	Kann man die menge aller regulären Ausdrücke selber durch einen regulären Ausdrücke beschreiben?
+\end{grayInfoBox}
+\begin{defBox}
+	Nein! REs sind daher ungeeignet zur Beschreibung der Syntax komplexer Programmiersprachen
+\end{defBox}
+...also Weitersuchen nach geeigneter Beschreibungsform für Syntax\\
+Aber: REs sind trotzdem innerhalb eines Compilers nützlich (siehe PLPJ Kapitel 4, Scanner)
+\subsubsection*{Kontextfreie Grammatiken (CFGs)}
+Eine kontextfreie Grammatik besteht aus 
+\begin{itemize}
+	\item Einer Menge von Terminalsymbolen T aus Alphabet
+	\item Einer Menge von Nicht-Terminalsymbolen N
+	\item Einem Startsymbol S $\in$ N
+	\item Einer Menge von Produktionen P
+	\begin{itemize}
+		\item Beschreiben, wie Nicht-Terminalsymbole aus Terminalsymbolen zusammengesetzt sind
+	\end{itemize}
+\end{itemize}
+\begin{grayInfoBox}
+	Produktionen in Backus-Naur-Form (BNF)
+	Nicht-Terminal ::= \fatsf{Zeichenkette} aus Terminal und Nicht-Terminalsymbolen
+\end{grayInfoBox}
+\begin{grayInfoBox}
+	Produktionen in Extended BNF (EBNF)
+	Nicht-Terminal ::= \fatsf{RE} aus Terminal und Nicht-Terminalsymbolen
+\end{grayInfoBox}
+
+\subsubsection*{Mehrdeutigkeit in BNF}
+Gegeben seinen die Produktionen:\\
+\begin{center}
+	S ::= S+S\\
+	S ::= x
+\end{center}
+Wie läßt sich die Zeichenkette x+x+x herleiten?
+\begin{center}
+	S $\rightarrow$ S+S $\rightarrow$ x+S $\rightarrow$ x+S+S $\rightarrow$ x+x+S $\rightarrow$ x+x+x
+\end{center}
+Aber auch anders:
+\begin{center}
+	S $\rightarrow$ S+S $\rightarrow$ S+x $\rightarrow$ S+S+x $\rightarrow$ S+x+x $\rightarrow$ x+x+x
+\end{center}
+
+\subsubsection*{Eindeutige CFG}
+Für sinnvolle praktische Anwendungen müssen CFGs \blue{eindeutig} sein.\\
+Eindeutige Produktionen für die gleiche CFG:
+\begin{center}
+	S ::= x + S\\
+	S ::= x
+\end{center}
+
+\subsection{(Mini-) Triangle}
+\subsubsection*{(Mini-) Triangle}
+\begin{itemize}
+	\item Pascal-artige Sprache als Anschauungsobjekt
+	\item Compiler-Quellcode auf Web-Page
+	\item In der Vorlesung: Mini-Triangle
+	\begin{itemize}
+		\item Weiter vereinfachte Version
+		\item z.B. keine Definition von Unterfunktionen
+	\end{itemize}
+\end{itemize}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{(Mini-) Triangle.jpeg}
+\end{figure}
+
+\subsubsection*{Produktionen der Mini-Triangle CFG 1}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{CFG1.jpeg}
+\end{figure}
+
+\clearpage
+\subsubsection*{Produktionen der Mini-Triangle CFG 2}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{CFG2.jpeg}
+\end{figure}
+
+\subsubsection*{Produktionen der Mini-Triangle CFG 3}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{CFG3.jpeg}
+\end{figure}
+
+\clearpage
+\subsubsection*{Produktionen der Mini-Triangle CFG 4}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{CFG4.jpeg}
+\end{figure}
+
+\subsubsection*{Terminologie}
+\blue{Phrase} Von einem gegebenen Nicht-Terminalsymbol herleitbare Kette von Terminalsymbolen. z.B. Expression-Phrase, Command-Phrase ...
+\blue{Satz} S-Phrase, wobei S das Startsymbol der CFG ist
+Beispiel:
+\begin{center}
+	\begin{codeBlock}{}
+		let
+			var y : Integer
+		in 
+			y := y + 1
+	\end{codeBlock}
+\end{center}
+\begin{itemize}
+	\item Das gesamte Programm ist ein Satz der CFG
+	\item Zeile 2 ist eine single-Declaration-Phrase
+	\item Zeile 4 ist eine single-Command-Phrase
+\end{itemize}
+
+\subsubsection*{Syntaxbäume}
+Ein Syntaxbaum ist ein geordneter, markierter Baum bei dem 
+\begin{itemize}
+	\item ...die Blätter mit Terminalsymbolen markiert sind
+	\item ...die inneren Knoten mit Nicht-Terminalsymbolen markiert sind
+	\item ...jeder innere Knoten N (von links nach rechts) die Kinder $X_1,...,X_n$ hat, entsprechend der Produktion N := $X_1 ... X_n$
+\end{itemize}
+Ein N-Baum ist ein Baum mit einem N Nicht-Terminalsymbol am Wurzelknoten.
+
+\clearpage
+\subsubsection*{Expression-Baum für d + 10 * n}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{Expression-Baum.jpeg}
+\end{figure}
+
+\subsubsection*{single-Command-Baum}
+\begin{codeBlock}{}
+	while b do begin
+		n := 0;
+		b := false
+	end
+\end{codeBlock}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{single-Command-Baum.jpeg}
+\end{figure}
+
+\subsubsection*{Konkrete und abstrakte Syntax}
+\begin{itemize}
+	\item Grammatik spezifiziert präzise syntaktische Details
+	\begin{itemize}
+		\item do, :=, ...
+	\end{itemize}
+\end{itemize}
+$\rightarrow$ Konkrete Syntax, wichtig für das Verfassen korrekter Programme
+\begin{itemize}
+	\item Konkrete Syntax hat aber keinen Einfluss auf Semantik der Programme
+	\begin{itemize}
+		\item V = E
+		\item V := E
+		\item set V = E
+		\item assign E to V
+		\item V $\leftarrow$ E
+	\end{itemize}
+	\item ...können alle das gleiche bedeuten: Eine Zuweisung von E nach V
+\end{itemize}
+$\rightarrow$ Für weitere Verarbeitung Darstellung vereinfachen!
+\subsubsection*{Abstrakte Syntax 1}
+\begin{itemize}
+	\item Modelliert nur \blue{essentielle Information}
+	\item Idee: Orientierung an der Subphrasen-Struktur der Produktionen
+	\item Beispiel: v-name := Expression hat zwei Subphrasen
+	\begin{enumerate}
+		\item V-name
+		\item Expression
+	\end{enumerate}
+\end{itemize}
+
+\subsubsection*{Abstrakte Syntax 2}
+\begin{itemize}
+	\item Schlüsselworte, Begrenzer wie \fatsf{do, :=} sind irrelevant
+	\item Unterscheidung zwischen
+	\begin{itemize}
+		\item \fatsf{Command} und \fatsf{single-Command}
+		\item \fatsf{Declaration} und \fatsf{single-Declaration}
+		\item \fatsf{Expression} und \fatsf{primary-Expression}
+	\end{itemize}
+	\item ... sind nur für das Erkennen des Programmes relevant, nicht zur Darstellung seiner Semantik.
+\end{itemize}
+$\rightarrow$ Alle dafür unwichtigen Details weglassen!
+
+\clearpage
+\subsubsection*{Auszug aus der abstrakten Syntax 1}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{Auszug aus der abstrakten Syntax 1.jpeg}
+\end{figure}
+
+\subsubsection*{Auszug aus der abstrakten Syntax 2}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{Auszug aus der abstrakten Syntax 2.jpeg}
+\end{figure}
+
+\clearpage
+\subsubsection*{Beispiel abstrakte Syntax}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{Beispiel abstrakte Syntax.jpeg}
+\end{figure}
+
+\subsubsection*{AST als Zwischendarstellung 1}
+\begin{itemize}
+	\item AST ist eine weit verbreitete Form der IR
+	\item High-level IR
+	\item Sehr nah an der Eingabesprache
+	\item Gut geeignet für weitreichende Analysen und Transformationen
+	\begin{itemize}
+		\item Unabhängig von Architektur der Zielmaschine
+		\item Verschieben von Anweisungen 
+		\item Änderungen der Programmstruktur
+	\end{itemize}
+\end{itemize}
+Schlechter geeignet für maschinennahe Analysen und Transformationen
+\begin{itemize}
+	\item Ausnutzung von Maschinenregistern
+	\item Ausnutzung von speziellen Maschinenbefehlsfolgen
+\end{itemize}
+$\rightarrow$ Hier: Konzentration auf \blue{maschinenunabhängige} Ebene
+\begin{itemize}
+	\item (D)AST ist Hauptrepräsentation
+	\item Für einzelne Bearbeitungsschritte: Andere IRs
+\end{itemize}
+
+\subsection{Kontextuelle Einschränkungen}
+\subsubsection*{Kontextuelle Einschränkungen: Geltungsbereiche}
+Syntaktische Korrektheit reicht nicht aus für sinnvolle Übersetzung
+\begin{defBox}[title=Geltungsbereiche(Scope)]
+	\begin{itemize}
+		\item Betreffen Sichtbarkeit von Bezeichnern
+		\item Jeder verwendete Bezeichner muss vorher deklariert werden
+		\begin{itemize}
+			\item ... nicht bei allen Programmiersprachen
+		\end{itemize}
+		\item Deklaration ist sog. bindendes Auftreten des Bezeichners
+		\item Benutzung ist sog. verwendendes Auftreten des Bezeichners
+		\item Aufgabe: Bringe jede Verwendung mit genau der einen passenden Bindung in Zusammenhang
+	\end{itemize}
+\end{defBox}
+\subsubsection*{Beispiele Geltungsbereichen}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{Beispiele Geltungsbereiche.jpeg}
+\end{figure}
+
+\subsubsection*{Kontextuelle Einschränkungen: Typen}
+\begin{defBox}
+	\begin{itemize}
+		\item Jeder Wert hat einen Typ
+		\item Jede Operation
+		\begin{itemize}
+			\item ...hat Anforderungen an die Typen der Operanden
+			\item ...hat Regeln für den Typ des Ergebnisses
+		\end{itemize}
+	\end{itemize}
+\end{defBox}
+...auch nicht bei allen Programmiersprachen
+\begin{itemize}
+	\item Hier: statische Typisierung (zur Compile-Zeit)
+	\item Alternativ: dynamische Typisierung (zur Laufzeit)
+\end{itemize}
+
+\subsubsection*{Beispiele Typen}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{Beispiele Typen.jpeg}
+\end{figure}
+
+\clearpage
+\subsection{Semantik}
+\subsubsection*{Semantik}
+Semantik beschreibt die Bedeutung eines Programmes zur Ausführungszeit.\\
+Allgemeine Terminologie:
+\begin{defBox}
+	...werden \blue{ausgeführt}. Mögliche Seiteneffekte:
+	\begin{itemize}
+		\item Ändern der Werte von Variablen
+		\item Ein-/Ausgabeoperationen
+	\end{itemize}
+\end{defBox}
+
+\begin{defBox}[title=Ausdrücke]
+	...werden \blue{ausgewertet}(evaluiert), um ein Ergebnis zu erhalten.
+	\begin{itemize}
+		\item Die Evaluation kann in einigen Sprachen auch Seiteneffekte haben.
+	\end{itemize}
+\end{defBox}
+\begin{defBox}[title=Deklarationen]
+	...werden \blue{elaboriert} um eine Bindung vorzunehmen. Mögliche Seiteneffekte:
+	\begin{itemize}
+		\item Allokieren von Speicherplatz
+		\item Initialisieren von Speicherplatz
+	\end{itemize}
+\end{defBox}
+
+\subsubsection*{Beispiele Semantik von (Mini)Triangle}
+Die Beschreibung orientiert sich am AST.\\
+\blue{AssignCmd} v := E
+\begin{enumerate}
+	\item Der Ausdruck E wird evaluiert um einen Wert V zu erhalten
+	\item V wird an die Variable v zugewiesen 
+\end{enumerate}
+\blue{BinaryExp} $E_1 op E_2$
+\begin{enumerate}
+	\item Der Ausdruck $E_1$ wird evaluiert um einen Wert $V_1$ zu erhalten
+	\item Der Ausdruck $E_2$ wird evaluiert um einen Wert $V_2$ zu erhalten
+	\item Die Werte $V_1$ und $V_2$ werden mit dem Operator op zu einem Wert $V_3$ verknüpft
+	\item $V_3$ ist das Ergebnis der BinaryExp
+\end{enumerate}
+\blue{Declaration} var I : T
+\begin{enumerate}
+	\item Der Bezeichner I wird an eine Variable vom Typ T gebunden
+	\item Es wird ein für T passender Speicherbereich bereitgestellt
+	\item Der Speicherbereich ist nicht initialisiert
+	\item Der Geltungsbereich für I ist der eingeschlossenen Block (LetCmd)
+	\item Am Ende des Blockes wird die Bindung aufgehoben
+	\item ...und der Speicherbereich wieder freigegeben
+\end{enumerate}
+
+\subsubsection*{Triangle}
+\begin{itemize}
+	\item In Vorlesung: Mini-Triangle
+	\begin{itemize}
+		\item Stark vereinfacht
+		\item z.B. Keine Unterprogramme (Prozeduren/Funktionen)
+	\end{itemize}
+	\item Im praktischen Teil: Triangle
+	\begin{itemize}
+		\item Pascal-artige Sprache
+		\item Arrays, Records, Prozeduren, Funktionen
+		\item Parameterübergabe durch Wert oder Referenz
+		\item Prozeduren/Funktionen als Parameter erlaubt
+		\item Ausdrücke haben keine Seiteneffekte 
+	\end{itemize}
+	\item Beschreibung in PLPJ, Anhang B
+\end{itemize}

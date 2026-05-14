@@ -1,0 +1,593 @@
+\section{Syntaktische Analyse}
+\subsection{Kompilierung}
+\subsection{Ablauf der Übersetzung}
+Terminologie: Phase
+\begin{itemize}
+    \item Transformationsschritte
+    \begin{itemize}
+        \item Von Quellcode
+        \item ...zum Maschinencode
+    \end{itemize}
+    \item Entspricht häufig den Teilen der Sprachspezifikation
+    \begin{enumerate}
+        \item Syntax $\rightarrow$ Syntaxanalyse
+        \item Kontextuelle Einschränkungen $\rightarrow$ Kontextanalyse
+        \item Semantik $\rightarrow$ Codegenerierung
+    \end{enumerate}
+\end{itemize}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Ablauf der Übersetzung.jpeg}
+\end{figure}
+Terminologie: Durchgang (pass)
+\begin{itemize}
+    \item Kompletter Durchgang des Programmes
+    \item Läuft über Quelltext oder IR
+    \item Pass kann Phase entsprechen
+    \item ...muss aber nicht!
+    \item Einzelner Pass kann mehrere Phasen durchführen
+    \item Aufbau des Compilers wird von der Anzahl der Passes dominiert
+\end{itemize}
+\begin{infoBox}
+    Ein Durchgang (Pass) ist ein vollständiger Ablauf, bei dem der Compiler den Code einmal analysiert oder bearbeitet. Ein Compiler kann aus einem oder mehreren Passes bestehen. Mehrere Passes erlauben tiefere Optimierungen und bessere Fehleranalyse, was die Effizienz des erzeugten Codes verbessern kann, aber den Kompilierungsprozess verlängert. Die Anzahl der Passes beeinflusst daher wesentlich den Aufbau und die Leistung des Compilers.
+\end{infoBox}
+\subsection{Ein-Pass Compiler}
+\begin{itemize}
+    \item Macht nur \blue{einen} Pass über den Quelltext
+    \begin{itemize}
+        \item Baut in der Regel \blue{keine} echte IR auf
+    \end{itemize}
+    \item Führt gleichzeitig aus
+    \begin{itemize}
+        \item Syntaxanalyse (Parsing)
+        \item Kontextanalyse 
+        \item Codegenerierung
+    \end{itemize}
+    \item Pascal Compiler haben häufig Ein-Pass-Struktur
+\end{itemize}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Ein-Pass Compiler.jpeg}
+\end{figure}
+
+\clearpage
+\subsection{Multi-Pass Compiler}
+\begin{itemize}
+    \item Macht mehrere Passes über das Program
+    \begin{itemize}
+        \item Quelltext und IR
+    \end{itemize}
+    \item Datenweitergabe zwischen Passes über IR
+\end{itemize}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{Multi-Pass Compiler.jpeg}
+\end{figure}
+\subsection{Vergleich Ein-Pass ./. Mulit-Pass-Compiler}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Vergleich Ein-Muli-Pass.jpeg}
+\end{figure}
+
+\clearpage
+\subsection{Beispiel Multi-Pass}
+Java-Compilierung \blue{erfordert} mehrere Passes
+\begin{codeBlock}{}
+    class Example{
+        void inc() {n = n + 1;}
+        int n;
+        void use() {n = 0; inc();}
+    }
+\end{codeBlock}
+Beachte Reihenfolge Verwendung/Bindung von n!
+\subsection{Aufbau des Triangle-Compilers}
+\begin{itemize}
+    \item Ein-Pass wäre für Triangle möglich
+    \item Aus pädagogische Gründen aber Multi-Pass
+\end{itemize}
+\begin{codeBlock}{}
+    public class Compiler{
+        public static boolean compilerProgram(...){
+            Scanner scanner = new Scanner(...);
+            Parser parser = new Parser(...);
+            Checker checker = new Checker(...);
+            Encoder encoder = new Encoder(...);
+            ...
+            Program theAST = parser.parse();
+            checker.check(theAST);
+            encoder.encode(theAST);
+            ...
+        }
+        public static void main (String[] args){
+            ... compileProgram(...); ...
+        }
+    }
+\end{codeBlock}
+\clearpage
+\subsection{Syntaxanalyse}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Syntaxanalyse 2.jpeg}
+\end{figure}
+
+\subsection{Subphasen der Syntaxanalyse}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Subphasen der Syntaxanalyse.jpeg}
+\end{figure}
+
+\clearpage
+\subsection{Token-Folge}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{Token-Folge.jpeg}
+\end{figure}
+
+\subsection{Tokens}
+\begin{itemize}
+    \item \blue{Token} ist atomares Symbol des Programms
+    \item Verwendet zwischen Scanner und Parser
+    \item Kann auch aus mehreren Zeichen bestehen
+    \item Zeichen selbst i.d.R. uninteressant, Ausnahmen:
+    \begin{itemize}
+        \item Bezeichnernamen
+        \item Konstante Werte (Zahlen, Zeichen), sog. Literale
+    \end{itemize}
+    \item ...Parser ist nur an der \blue{Art} des Tokens interessiert
+\end{itemize}
+\begin{codeBlock}{}
+    class Token {
+        TokenKind kind; //enum TokenKind{...}
+        Stirng spelling;
+        SourcePosition position; //Zeilennummer, Spalte
+    }
+\end{codeBlock}
+\subsection{Aufzählung für Token-Arten (Auszug)}
+\begin{codeBlock}{}
+    enum TokenKind{
+        //literals, identifiers, operators ...
+        INTLITERAL (0, "<int>"),
+        IDENTIFIER (2, "<identifier>"),
+        OPERATOR   (3, "<operator>"),
+
+        //reserved words
+        BEGIN      (5, "begin"),
+        CONST      (6, "const"),
+        DO         (7, "do"),
+        ELSE       (8, "else"),
+        END        (9, "end"),
+        IF         (11, "if"),
+        IN         (12, "in"),
+        LET        (13, "let"),
+        THEN       (17, "then")
+        VAR        (19, "var"),
+        WHILE      (20, "while"),
+        SEMICOLON  (23, ";"),
+        COMMA      (24, ","),
+        BECOMES    (25, ":="),
+        IS         (26, "~"),
+        LPARSEN    (27, "("),
+        RPARSEN    (28, ")"),
+        ...
+        final int id;
+        final String spelling;
+        ...
+    }
+\end{codeBlock}
+Beispiel: t = new Token()TokenKind.OPERATOR, "+", position);
+\clearpage
+\subsection{Parsen der Token-Folge}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Parsen der Token-Folge.jpeg}
+\end{figure}
+
+\subsection{Aufbau des AST aus Token-Folge}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Aufbau des AST aus Token-Folge.jpeg}
+\end{figure}
+
+\clearpage
+\subsection{Kurzwiederholung Grammatiken}
+\begin{itemize}
+    \item Kontextfreie Grammatiken (CFG)
+    \item Spezifiziert durch (N, T, P, S)
+    \item CFG definiert Menge von Zeichenketten
+    \begin{itemize}
+        \item Elemente sind Sätze bestehend aus Terminalsymbolen
+        \item Gesamtmenge ist Sprache der CFG
+    \end{itemize}
+    \item Hier: Sätze haben eindeutige Phrasenstruktur
+    \item P häufig in Backus-Naur-Form (BNF) angegeben
+    \item Übersichtlicher: Extended BNF
+    \begin{itemize}
+        \item BNF + Reguläre Ausdrücke auf rechter Seite der Produktionen
+    \end{itemize}
+\end{itemize}
+
+\subsection{Produktionen in EBNF}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=1\textwidth]{Produktionen in EBNF.jpeg}
+\end{figure}
+
+\subsection{Reguläre Ausdrücke und Grammatiken}
+\begin{itemize}
+    \item Auch REs definieren eine Sprache
+    \begin{itemize}
+        \item \blue{Reguläre Sprache}
+        \item Weniger komplex als durch CFG beschreibbare Sprachen
+    \end{itemize}
+    \item CFG erlaubt Beschreibung von Selbsteinbettung
+    \begin{itemize}
+        \item Ausdruck \fatsf{a*(b+c)/d} bettet Ausdruck \fatsf{b+c} ein
+        \item Vergleichbar dem Konzept der Rekursion
+    \end{itemize}
+    \item REs erlauben \blue{keine} Beschreibung von Selbsteinbettung
+\end{itemize}
+Ziel: Systematische Herleitung von Parsern aus CFG
+
+\subsection{Transformation von Grammatiken}
+Hilfsmittel
+\begin{itemize}
+    \item CFG kann transformiert (umgestellt) werden
+    \item ...unter Beibehaltung der beschriebenen Sprache
+\end{itemize}
+
+\subsection{Grammatik-Transformation durch Gruppierung}
+\begin{itemize}
+    \item Zusammenfassen von Produktionen mit gleichem Nicht-Terminal auf linker Seite
+    \begin{itemize}
+        \item Left-Hand Side (LHS), analog RHS
+    \end{itemize}
+\end{itemize}
+\begin{defBox}[title=Vor Transformation]
+    S ::= X + S\\
+    S ::= X
+    S ::= $\epsilon$
+\end{defBox}
+\begin{defBox}[title=Nach Gruppierung]
+    S ::= X + S|X|$\epsilon$
+\end{defBox}
+
+\subsection{Grammatik-Transformation durch Linksausklammern}
+\begin{itemize}
+    \item Zusammenfassen von gleichen Anfängen in einer Produktion 
+    \item X Y | X Z $\rightarrow$ X(Y|Z)
+\end{itemize}
+Beispiel:
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Grammatik-Transformation durch Linksausklammern.jpeg}
+\end{figure}
+
+\subsection{Beseitigung von Linksrekursion}
+\begin{itemize}
+    \item Linksrekursion in Produktion
+    \begin{itemize}
+        \item N ::= X | N Y
+        \item L(N) = \{X, XY, XYY, XYYY, XYYYY, ...\}
+    \end{itemize}
+    \item Ersetzung durch
+    \begin{itemize}
+        \item \blue{N ::= X(Y)*}
+    \end{itemize}
+\end{itemize}
+Beispiel:
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Beseitigung von Linksrekursion.jpeg}
+\end{figure}
+
+\subsection{Kombinierter Fall}
+\begin{defBox}[title=Vor Transformation]
+    N ::= $X_{1} | ... | X_{m} | N Y_{1} | N Y_{n}$
+\end{defBox}
+\begin{defBox}[title=Nach Linksausklammern]
+    N ::= $(X_{1} | ... | X_{m} | (N(Y_{1} | ... | Y_{n})))$
+\end{defBox}
+\begin{defBox}[title=Nach Beseitigen der Linksrekursion]
+    N ::= $(X_{1} | ... | X_{m})(Y_{1} | ... | Y_{n})*$
+\end{defBox}
+
+\subsection{Ersetzen von Nicht-Terminalsymbolen}
+\begin{itemize}
+    \item Wenn N ::= X einzige Produktion mit LHS N ist
+    \item ...N durch X in RHS aller Produktionen ersetzen
+\end{itemize}
+Beispiel:
+\begin{defBox}[title=Vor Transformation]
+    single-Declaration ::= \fatsf{var} Identifier : Type-denoter| ...\\
+    Type-denoter ::= Identifier
+\end{defBox}
+\begin{defBox}[title=Nach Ersetzung]
+    single-Declaration ::= \fatsf{var} Identifier : Identifier | ...
+\end{defBox}
+\begin{defBox}[title=Aber ...]
+    Solche \enquote{überflüssigen} Nicht-Terminals können nützlichen Dokumentationscharakter für den menschlichen Leser haben!
+\end{defBox}
+
+\subsection{Nutzen von Grammatiktransformationen}
+\begin{itemize}
+    \item Hier auf den ersten Blick noch nicht erkennbar
+    \item Erlauben kompaktere und lesbarere Beschreibung von CFGs
+    \item \blue{Sehr nützlich} bei der Konstruktion von Parsern für CFGs
+\end{itemize}
+
+\subsection{Parsing Terminologie}
+\blue{Erkennung:} Entscheidung, ob ein Eingabetext ein Satz der Grammatik G ist.\\
+\blue{Parsing:} Erkennung und zusätzlich Bestimmung der Phrasen-Struktur
+\begin{itemize}
+    \item Beispiel:Durch konkreten Syntaxbaum
+\end{itemize}
+\blue{Eindeutigkeit:} Eine Grammatik ist eindeutig, falls jeder Eingabetext auf maximal eine Weise geparsed werden kann
+\begin{itemize}
+    \item Ein syntaktisch korrekter Eingabetext hat genau einen eindeutigen Syntaxbaum
+\end{itemize}
+
+\subsection{Parsing Stategien}
+\begin{itemize}
+    \item Zwei wesentliche Verfahren
+    \item Unterscheiden sich in der Art ihres Vorgehens
+    \begin{itemize}
+        \item \blue{Top-Down}  Beispiel: Rekursiver Abstieg
+        \item \blue{Bottom-Up} Beispiel: Shift/Reduce
+    \end{itemize}
+\end{itemize}
+
+\subsection{Beispiel: Micro-English}
+Produktionen
+\begin{center}
+    Sentence ::= Subject Verb Object\\
+    Subject ::= I | a Noun | the Noun\\
+    Object ::= me | a Noun | the Noun\\
+    Noun ::= cat | mat | rat
+    Verb ::= like | is | see | sees
+\end{center}
+Beispiel der erzeugten Sprache
+\begin{center}
+    the cat sees a rat.\\
+    I like the cat.\\
+    the cat see me.\\
+    I like me.\\
+    a rat like me.
+\end{center}
+
+\subsection{Bottom-Up Parsing}
+Vorgehensweise
+\begin{itemize}
+    \item Untersuche Eingabetext zeichenweise, von links nach rechts
+    \item Baue Syntaxbaum vom \blue{unten nach oben} auf
+    \begin{itemize}
+        \item Von den Terminalzeichen in den Blättern
+        \item ...zum S Nicht-Terminal in der Wurzel
+    \end{itemize}
+\end{itemize}
+Zwei Arten von Aktionen
+\begin{itemize}
+    \item \blue{Shift} Lese Zeichen ein
+    \begin{itemize}
+        \item Zusätzlich: Und lege es auf dem Stack ab
+    \end{itemize}
+    \item \blue{Reduce} Erkenne ein Nicht-Terminal LHS der Produktion p
+    \begin{itemize}
+        \item Zusätzlich: Oberste Elemente des Stapels müssen RHS von p entsprechen, ersetze durch LHS von p (Zusammenfassen)
+        \item Ende wenn Startsymbol S erreicht und Eingabetext komplett gelesen
+    \end{itemize}
+\end{itemize}
+
+\subsection{Beispiel Bottom-Up Parsing}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Beispiel Bottom-Up Parsing 1.jpeg}
+\end{figure}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Beispiel Bottom-Up Parsing 2.jpeg}
+\end{figure}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Beispiel Bottom-Up Parsing 3.jpeg}
+\end{figure}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Beispiel Bottom-Up Parsing 4.jpeg}
+\end{figure}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Beispiel Bottom-Up Parsing.jpeg}
+\end{figure}
+\clearpage
+\begin{infoBox}[title=Parsing-Schritte (Bottom-Up - Shift-Reduce)]
+    \begin{enumerate}
+        \item \fatsf{Shift} \texttt{the}: Füge \texttt{the} in den Stack ein.
+        \item \fatsf{Shift} \texttt{cat}: Füge \texttt{cat} in den Stack ein.
+        \begin{itemize}
+            \item Jetzt haben wir \texttt{the cat} im Stack.
+        \end{itemize}
+        \item \fatsf{Reduce} \texttt{the cat}: Ersetze \texttt{the cat} durch \fatsf{Subject.}
+        \begin{itemize}
+            \item Regel: \fatsf{Subject ::= the Noun}
+            \item Jetzt steht \texttt{Subject} im Stack.
+        \end{itemize}
+        \item ...
+    \end{enumerate} 
+\end{infoBox}
+\subsection{Schwierigkeit bei Bottom-Up Parsing}
+\blue{Welche} Produktion beim Zusammenfassen anwenden?
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Schwierigkeit bei Bottom-Up Parsing.jpeg}
+\end{figure}
+Lösung: Nicht nur bekannte Zeichen betrachten, sondern auch noch Zustand (\enquote{schon Subject gesehen}) einbeziehen.\\
+\blue{... aber hier nicht weiter vertieft!}
+\begin{infoBox}
+    Beim \fatsf{Bottom-Up Parsing} besteht die Schwierigkeit darin, zu entscheiden, welche Regel angewendet werden soll, um Symbole zusammenzufassen. Der Parser muss nicht nur die aktuelle Symbole betrachten, sondern auch seinen \fatsf{Parsing-Zustand} mit einbeziehen (z.B. ob er bereits ein Subjekt erkannt hat), um Entscheidungen zu treffen und den Satz korrekt zu analysieren.
+\end{infoBox}
+
+\subsection{Top-Down Parsing}
+Vorgehensweise 
+\begin{itemize}
+    \item Untersuche Eingabetext zeichenweise, von links nach rechts
+    \item Baue Syntaxbaum von \blue{oben nach unten} auf
+    \begin{itemize}
+        \item Vom Start-Nicht-Terminal S in der Wurzel 
+        \item ...zu den Terminalzeichen in den Blättern
+    \end{itemize}
+\end{itemize}
+Aktion
+\begin{itemize}
+    \item Expandiere jeweils das am weitesten links gelegene Nicht-Terminal N
+    \item ...durch Anwendung einer Produktion \fatsf{N ::= X}
+    \item Wähle Produktion aus durch Betrachten der nächsten n Zeichen des Eingabetextes (Annahme hier: n = 1)
+    \item Falls keine Produktion auf Zeichen passt $\rightarrow$ \blue{Fehler!}
+    \item Ende wenn Eingabetext komplett gelesen und kein unexpandiertes Nicht-Terminal mehr existiert
+\end{itemize}
+\subsection{Beispiel Top-Down Parsing}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Beispel Top-Down Parsing 0.jpeg}
+\end{figure}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Beispiel Top-Down Parsing 1.jpeg}
+\end{figure}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Beispiel Top-Down Parsing.jpeg}
+\end{figure}
+\clearpage
+\subsection{Hintergrund Top-Down Parsing}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Hintergrund Top-Down Parsing.jpeg}
+\end{figure}
+Falls es möglich ist,
+\begin{itemize}
+    \item ...bei Betrachten der nächsten k Zeichen des Textes
+    \item ...immer die richtige Produktion zu finden
+\end{itemize}
+dann ist die Grammatik \blue{LL(k)}
+\begin{itemize}
+    \item \blue{L:} Lese Eingabetext von \blue{links nach rechts}
+    \item \blue{L:} Leite immer vom am weitesten \blue{links} stehenden Nicht-Terminal ab
+\end{itemize}
+
+\subsection{Vergleich Top-Down mit Bottom-Up Parsing}
+\begin{itemize}
+    \item Probleme mit Top-Down-Parsing
+    \begin{itemize}
+        \item Konstruktion einer LL(k) Grammatik für die gewünschte Sprache gelegentlich mühsam
+        \item Linksausklammern und Beseitigen von Linksrekursion können Lesbarkeit der Grammatik erschweren
+    \end{itemize}
+    \item Lösung: Bottom-Up-Parsing mit LR(k)-Techniken
+    \begin{itemize}
+        \item \blue{L}: Lese Eingabetext von \blue{links nach rechts}
+        \item \blue{R}: Fasse die am weitesten \blue{rechts} stehenden Terminal-Symbole zusammen und baue den Baum \blue{rückwärts} auf
+        \item Mächtigeres Beschreibungsinstrument als LL(k)
+        \item Nachteil: Parsing-Vorgang komplexer und schlechter verständlich
+    \end{itemize}
+\end{itemize}
+\fatsf{LL(k) $\subset$ LR(k)}
+
+\subsection{Parsen mit rekursivem Abstieg}
+\blue{Einfache} Implementierung der Top-Down Strategie, Idee:
+\begin{itemize}
+    \item Struktur des konkreten Syntaxbaumes (Parse-Baum) entspricht
+    \item ...Aufrufmuster von sich wechselseitig aufrufenden Prozeduren
+    \item Für jedes Nicht-Terminal \fatsf{XYZ} existiert
+    \item ...Parse-Prozedur \fatsf{parseXYZ}, die genau dieses Nicht-Terminal parst
+\end{itemize}
+Beispiel:
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Parsen mit rekursivem Abstieg.jpeg}
+\end{figure}
+
+\subsection{Beispiel für Micro-English 1}
+\begin{defBox}
+    Sentence ::= Subject Verb Object \red{.}
+\end{defBox}
+\begin{codeBlock}{}
+    protected void parseSentence(){
+        parseSubject();
+        parseVerb();
+        parseObject();
+        accept(".");
+    }
+\end{codeBlock}
+\begin{defBox}
+    \red{accept(t)} prüft, ob \red{aktuelles Token} das erwartete Token \red{t} ist.
+\end{defBox}
+
+\subsection{Beispiel für Micro-English 2}
+\begin{defBox}
+    Subject ::= \red{I} | \red{a} Noun | \red{the} Noun
+\end{defBox}
+\begin{codeBlock}{}
+    protected void parseSubject(){
+        if (currentToken matches "I"){
+            accept("I");
+        } else if (currentToken matches "a"){
+            accept("a");
+            parseNoun();
+        } else if (currentToken matches "the"){
+            accept("the");
+            parseNoun();
+        } else 
+            report a syntax error
+    }
+\end{codeBlock}
+\begin{defBox}
+    Die Methode \red{muss} immer anhand von currentToken die \red{passende} Alternative auswählen können.
+\end{defBox}
+
+\subsection{Beispiel für Micro-English 3}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{Beispiel für Micro-English 3.jpeg}
+\end{figure}
+\begin{itemize}
+    \item \fatsf{currentToken} enthält nacheinander die Tokens des Eingabetextes
+    \item Ablauf einer Methode \fatsf{parseN}
+    \begin{itemize}
+        \item Bei Eintritt enthält \fatsf{currentToken} eines der Token, \blue{mit denen N beginnen kann}
+        \item ...sonst wäre eine andere Parse-Methode aufgerufen werden (oder Syntaxfehler)
+        \item Bei Austritt enthält \fatsf{currentToken} das auf die \fatsf{N}-Phrase folgende Token
+    \end{itemize}
+    \item Ablauf der Methode \fatsf{accept(t)}
+    \begin{itemize}
+        \item Bei Eintritt muss \fatsf{currentToken} = t sein
+        \item ...sonst Syntaxfehler
+        \item Bei Austritt enthält \fatsf{currentToken} das auf t folgende Token
+    \end{itemize}
+\end{itemize}
+
+\subsection{Systematische Konstruktion von Parsern}
+Entwicklung von Parsern mit rekursivem Abstieg
+\begin{enumerate}
+    \item Fomuliere Grammatik (CFG) in EBNF
+    \begin{itemize}
+        \item Eine Produktion pro Nicht-Terminal
+        \item Beseitige \blue{immer} Linksrekursion
+        \item Klammere gemeinsame Teilausdrücks nach links aus wo \blue{möglich}
+    \end{itemize}
+    \item Erstelle Klasse für den Parser mit 
+    \begin{itemize}
+        \item \fatsf{protected} Variable \fatsf{currentToken}
+        \item Schnittstellenmethoden zum Scanner
+        \begin{itemize}
+            \item \fatsf{accept(t)} and \fatsf{acceptIt()}
+        \end{itemize}
+        \item \fatsf{public} Methode \fatsf{parse}, welche ...
+        \begin{itemize}
+            \item erstes Token via Scanner aus dem Eingabetext liest
+            \item die Parse-Methode des Start Nicht-Terminals S der CFG aufruft
+        \end{itemize}
+        \item Implementiere \fatsf{protected} Parsing-Methoden
+        \begin{itemize}
+            \item Methode \fatsf{parseN} für jedes Nicht-Terminalsymbol \fatsf{N}
+        \end{itemize}
+    \end{itemize}
+\end{enumerate}
