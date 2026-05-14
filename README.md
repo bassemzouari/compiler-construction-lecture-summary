@@ -6,7 +6,6 @@ syntax analysis, parsing algorithms, compiler architecture,
 and runtime systems.
 
 > Language: German 🇩🇪  
-> This repository contains German lecture summaries and notes.
 
 The project focuses on structured technical documentation,
 formal language theory, and concise explanations of compiler
